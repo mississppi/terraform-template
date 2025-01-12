@@ -114,3 +114,71 @@ resource "aws_route_table_association" "private_subnet_association" {
   subnet_id      = aws_subnet.private_subnet.id
   route_table_id = aws_route_table.private.id
 }
+
+# ----------------------
+# Security Group Configuration
+# ----------------------
+
+# Public Security Group (for instances in the public subnet)
+resource "aws_security_group" "public_sg" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "public-sg"
+  }
+
+  ingress {
+    description      = "Allow SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"] # 開発用。必要に応じて制限
+  }
+
+  ingress {
+    description      = "Allow HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description      = "Allow HTTPS"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description      = "Allow all outbound traffic"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+}
+
+# Private Security Group (for instances in the private subnet)
+resource "aws_security_group" "private_sg" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "private-sg"
+  }
+
+  ingress {
+    description      = "Allow traffic from public subnet"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    security_groups  = [aws_security_group.public_sg.id]
+  }
+
+  egress {
+    description      = "Allow all outbound traffic"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+}
