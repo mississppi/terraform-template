@@ -13,22 +13,45 @@ resource "aws_vpc" "main" {
 # ----------------------
 # Subnet Configuration
 # ----------------------
-resource "aws_subnet" "public_subnet" {
+# 既存のパブリックサブネット (ap-northeast-1a)
+resource "aws_subnet" "public_subnet_1a" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "ap-northeast-1a"
-  map_public_ip_on_launch = true  # パブリックIPを自動割り当て
+  map_public_ip_on_launch = true
   tags = {
-    Name = "public-subnet"
+    Name = "public-subnet-1a"
   }
 }
 
-resource "aws_subnet" "private_subnet" {
+# 既存のプライベートサブネット (ap-northeast-1a)
+resource "aws_subnet" "private_subnet_1a" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.2.0/24"
   availability_zone = "ap-northeast-1a"
   tags = {
-    Name = "private-subnet"
+    Name = "private-subnet-1a"
+  }
+}
+
+# 新しいパブリックサブネット (ap-northeast-1c)
+resource "aws_subnet" "public_subnet_1c" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.3.0/24"  # 新しいCIDRブロック
+  availability_zone       = "ap-northeast-1c"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "public-subnet-1c"
+  }
+}
+
+# 新しいプライベートサブネット (ap-northeast-1c)
+resource "aws_subnet" "private_subnet_1c" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.4.0/24"  # 新しいCIDRブロック
+  availability_zone = "ap-northeast-1c"
+  tags = {
+    Name = "private-subnet-1c"
   }
 }
 
@@ -90,7 +113,7 @@ resource "aws_eip" "nat_eip" {
 # NAT Gateway
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat_eip.id
-  subnet_id     = aws_subnet.public_subnet.id
+  subnet_id     = aws_subnet.public_subnet_1c.id
   tags = {
     Name = "nat-gateway"
   }
@@ -106,21 +129,25 @@ resource "aws_route" "private_to_nat" {
   nat_gateway_id         = aws_nat_gateway.nat.id
 }
 
-# ----------------------
-# Associate Public Route Table with Public Subnet
-# ----------------------
-
-resource "aws_route_table_association" "public_subnet_association" {
-  subnet_id      = aws_subnet.public_subnet.id
+# Public Subnet Association
+resource "aws_route_table_association" "public_subnet_association_1a" {
+  subnet_id      = aws_subnet.public_subnet_1a.id
   route_table_id = aws_route_table.public.id
 }
 
-# ----------------------
-# Associate Private Route Table with Private Subnet
-# ----------------------
+resource "aws_route_table_association" "public_subnet_association_1c" {
+  subnet_id      = aws_subnet.public_subnet_1c.id
+  route_table_id = aws_route_table.public.id
+}
 
-resource "aws_route_table_association" "private_subnet_association" {
-  subnet_id      = aws_subnet.private_subnet.id
+# Private Subnet Association
+resource "aws_route_table_association" "private_subnet_association_1a" {
+  subnet_id      = aws_subnet.private_subnet_1a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_subnet_association_1c" {
+  subnet_id      = aws_subnet.private_subnet_1c.id
   route_table_id = aws_route_table.private.id
 }
 
@@ -192,23 +219,31 @@ resource "aws_security_group" "private_sg" {
   }
 }
 
-# ネットワーク情報を他で利用できるようにエクスポート
-output "vpc_id" {
-  value = aws_vpc.main.id
-}
+# ----------------------
+# RDS Security Group Configuration
+# ----------------------
 
-output "public_subnet_id" {
-  value = aws_subnet.public_subnet.id
-}
+resource "aws_security_group" "rds_sg" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "rds-sg"
+  }
 
-output "private_subnet_id" {
-  value = aws_subnet.private_subnet.id
-}
+  # Allow MySQL connections from private_sg
+  ingress {
+    description      = "Allow MySQL access from private subnet instances"
+    from_port        = 3306 # MySQLポート
+    to_port          = 3306
+    protocol         = "tcp"
+    security_groups  = [aws_security_group.private_sg.id] # private_sgからのアクセスを許可
+  }
 
-output "public_sg_id" {
-  value = aws_security_group.public_sg.id
-}
-
-output "private_sg_id" {
-  value = aws_security_group.private_sg.id
+  # Allow all outbound traffic (required for RDS to function correctly)
+  egress {
+    description      = "Allow all outbound traffic"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
 }

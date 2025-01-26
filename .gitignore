@@ -1,4 +1,15 @@
 # Terraform状態ファイル
+terraform.tfstate
+terraform.tfstate.backup
+
+# 機密情報を含む変数ファイル
+*.tfvars
+
+# Terraformロックファイル
+.terraform/
+.terraform.lock.hcl
+
+# Terraform状態ファイル
 /network/terraform.tfstate
 /network/terraform.tfstate.backup
 
@@ -20,3 +31,17 @@
 # Terraformロックファイル
 /server/.terraform/
 /server/.terraform.lock.hcl
+
+
+# Terraform状態ファイル
+/database/variables.tf
+
+/database/terraform.tfstate
+/database/terraform.tfstate.backup
+
+# 機密情報を含む変数ファイル
+/database/*.tfvars
+
+# Terraformロックファイル
+/database/.terraform/
+/database/.terraform.lock.hcl
