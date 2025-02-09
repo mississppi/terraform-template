@@ -11,6 +11,7 @@ module "server" {
 module "alb" {
   source = "./alb"
   vpc_id = module.network.vpc_id
+  example_id = module.server.instance_id
   subnet_ids       = module.network.public_subnet_ids
   security_group_id = module.network.public_sg_id
 }

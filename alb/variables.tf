@@ -3,6 +3,11 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "example_id" {
+  description = "ec2webserverid"
+  type        = string
+}
+
 variable "subnet_ids" {
   description = "The subnet ID for the EC2 instance"
   type        = list(string)

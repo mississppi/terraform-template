@@ -11,13 +11,13 @@ resource "aws_instance" "example" {
   security_groups = [var.security_group_id] 
 
   user_data = <<-EOF
-            #!/bin/bash
-            # Nginx のインストールと起動
-            sudo apt-get update -y
-            sudo apt-get install -y nginx
-            sudo systemctl start nginx
-            sudo systemctl enable nginx
-            EOF
+  #!/bin/bash
+  # Nginx のインストールと起動
+  sudo yum update -y
+  sudo yum install -y nginx
+  sudo systemctl start nginx
+  sudo systemctl enable nginx
+  EOF
 
   tags = {
     Name = "ExampleInstance"
