@@ -2,13 +2,18 @@ module "network" {
   source = "./network" # networkディレクトリをモジュールとして呼び出す
 }
 
-/*
 module "server" {
   source = "./server"
   subnet_id       = module.network.public_subnet_id[0]
   security_group_id = module.network.public_sg_id
 }
-*/
+
+module "alb" {
+  source = "./alb"
+  vpc_id = module.network.vpc_id
+  subnet_ids       = module.network.public_subnet_ids
+  security_group_id = module.network.public_sg_id
+}
 
 /*
 module "database" {
